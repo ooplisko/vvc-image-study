@@ -1,0 +1,126 @@
+{
+  "fixture": "synthetic smoke0 96x96, QP22/32, ten output controls",
+  "controls": [
+    {
+      "codec": "vtm23-baseline-trace",
+      "qp": 22,
+      "conversion": "ffmpeg_444",
+      "input_sha256": "1eb665c2b9c6bbc70c52986464772ea5bc2c200c942b208ac75675a3ced4072a",
+      "stream_sha256": "ebffcb596122f3fc4977c3f74d7132809e969dc4fae8ee0ded458a0a972075b7",
+      "decoded_sha256": "dfedb7e71a70619adddc1d56660356e28f49e3a41048f41cbc60ef1b4904b49b",
+      "input_yuv_sha256": "8d92e881227ebda4aae7d7cc429c59649c09836c4ba84e885ae8dc187c108301",
+      "bitstream_bytes": 5063,
+      "cu_count": null,
+      "partitions_sha256": null
+    },
+    {
+      "codec": "vtm23-baseline-trace",
+      "qp": 32,
+      "conversion": "ffmpeg_444",
+      "input_sha256": "1eb665c2b9c6bbc70c52986464772ea5bc2c200c942b208ac75675a3ced4072a",
+      "stream_sha256": "569320d4300245c7c1087950ee60f9ce9a18ee57dde3e7265d9801ba1fc39ee9",
+      "decoded_sha256": "d368739dd4f2f4527cfcaab2699002b63fb71393ab6bd9b59e0d379d910beced",
+      "input_yuv_sha256": "8d92e881227ebda4aae7d7cc429c59649c09836c4ba84e885ae8dc187c108301",
+      "bitstream_bytes": 2752,
+      "cu_count": 46,
+      "partitions_sha256": "d2b4df31a58114d02d35ff2b074c78c8abdc656720b90ec04af15617f541b604"
+    },
+    {
+      "codec": "vtm23-baseline-trace",
+      "qp": 22,
+      "conversion": "opencv_444",
+      "input_sha256": "1eb665c2b9c6bbc70c52986464772ea5bc2c200c942b208ac75675a3ced4072a",
+      "stream_sha256": "ecc9f72e258ea815b04dd2ae69140acf743e00e71f2e49c95badcfb08588ed1e",
+      "decoded_sha256": "1259cce9eb4ccb9dd24690a5041592d1c2ed02a7e5270f1170b095766bb83d52",
+      "input_yuv_sha256": "36a2ac3bd1be195a14396f4bea94f4e6dd0031368ceec4ebcd5e7d9640e8c38a",
+      "bitstream_bytes": 5016,
+      "cu_count": 280,
+      "partitions_sha256": "48afcace00132e1f69cd578332e7b93c9b1ed66a464af65d327ac4ba32450f42"
+    },
+    {
+      "codec": "vtm23-baseline-trace",
+      "qp": 32,
+      "conversion": "opencv_444",
+      "input_sha256": "1eb665c2b9c6bbc70c52986464772ea5bc2c200c942b208ac75675a3ced4072a",
+      "stream_sha256": "ead84f820b7abf6c19142d577a3c24285f9ffcc5e273f35af09a748a766570f3",
+      "decoded_sha256": "c9ea9e4b0b56d44e3cfb6195e1cb191b8b5802241cfb086eea90f71fea1fc34f",
+      "input_yuv_sha256": "36a2ac3bd1be195a14396f4bea94f4e6dd0031368ceec4ebcd5e7d9640e8c38a",
+      "bitstream_bytes": 2669,
+      "cu_count": 56,
+      "partitions_sha256": "27d9f07829d1fd5602f06e86759f7a1422eddb2a35b2d1f40b970a65fc139448"
+    },
+    {
+      "codec": "vtm23-csf-trace",
+      "qp": 22,
+      "conversion": "ffmpeg_444",
+      "input_sha256": "1eb665c2b9c6bbc70c52986464772ea5bc2c200c942b208ac75675a3ced4072a",
+      "stream_sha256": "bf3aedc0072a0d3b9f52b0f0948b0fa25e12689ab485bfdcf0381f27ed48d43e",
+      "decoded_sha256": "f842605f86b2f1e7f15709e02a20208ec18823971eaac865b67db1244ac13733",
+      "input_yuv_sha256": "8d92e881227ebda4aae7d7cc429c59649c09836c4ba84e885ae8dc187c108301",
+      "bitstream_bytes": 5546,
+      "cu_count": null,
+      "partitions_sha256": null
+    },
+    {
+      "codec": "vtm23-csf-trace",
+      "qp": 32,
+      "conversion": "ffmpeg_444",
+      "input_sha256": "1eb665c2b9c6bbc70c52986464772ea5bc2c200c942b208ac75675a3ced4072a",
+      "stream_sha256": "24bab3efc0c4cedba7af16ab012fb19dad63a7f2611b178edfc7cf6496de4f18",
+      "decoded_sha256": "770c9da98559d52a567f382b20cc6b1357982d491682a630ccf9ef5f03088b31",
+      "input_yuv_sha256": "8d92e881227ebda4aae7d7cc429c59649c09836c4ba84e885ae8dc187c108301",
+      "bitstream_bytes": 2791,
+      "cu_count": 61,
+      "partitions_sha256": "086a5feac8086c5889b7b52ee11f71b026b9329e4fe6441ba3b81fcfabe828ba"
+    },
+    {
+      "codec": "vvenc-baseline-trace",
+      "qp": 22,
+      "conversion": "ffmpeg_420",
+      "input_sha256": "1eb665c2b9c6bbc70c52986464772ea5bc2c200c942b208ac75675a3ced4072a",
+      "stream_sha256": "ac28a0b8d15b945d85533872a15a0f829699bfbd12886b549dc3171a9f87cd38",
+      "decoded_sha256": "dc0f2ae03cac584da6898e3a04a21ecbeef0f7433bb89c6343bd858c208ec0f4",
+      "input_yuv_sha256": "c6be9d3af9520764a3bcf1c72095580f0035de4929c22a1ef4147936d581170f",
+      "bitstream_bytes": 3403,
+      "cu_count": null,
+      "partitions_sha256": null
+    },
+    {
+      "codec": "vvenc-baseline-trace",
+      "qp": 32,
+      "conversion": "ffmpeg_420",
+      "input_sha256": "1eb665c2b9c6bbc70c52986464772ea5bc2c200c942b208ac75675a3ced4072a",
+      "stream_sha256": "d5d88c58484c27de02c8b1a00ad6c6ae754a89561c36cd9e4f38c12436cdbc42",
+      "decoded_sha256": "d7b27dc903740a64983cfe2a543753e504cdb5ec35e04eea1cff62fdc44906d6",
+      "input_yuv_sha256": "c6be9d3af9520764a3bcf1c72095580f0035de4929c22a1ef4147936d581170f",
+      "bitstream_bytes": 1159,
+      "cu_count": 70,
+      "partitions_sha256": "134f173e5101709bcb7a7368724e09be9ae9b42c0fc568488dabfffd83c67337"
+    },
+    {
+      "codec": "vvenc-csf-trace",
+      "qp": 22,
+      "conversion": "ffmpeg_420",
+      "input_sha256": "1eb665c2b9c6bbc70c52986464772ea5bc2c200c942b208ac75675a3ced4072a",
+      "stream_sha256": "5e8a339a34bf759918b1793da5423ce1e885266142b0e78fe0b413f7cf4b6c1c",
+      "decoded_sha256": "2f78ca6914d20230af072dd80fd6825ed535133f37ebc64381b5693782baa633",
+      "input_yuv_sha256": "c6be9d3af9520764a3bcf1c72095580f0035de4929c22a1ef4147936d581170f",
+      "bitstream_bytes": 4228,
+      "cu_count": null,
+      "partitions_sha256": null
+    },
+    {
+      "codec": "vvenc-csf-trace",
+      "qp": 32,
+      "conversion": "ffmpeg_420",
+      "input_sha256": "1eb665c2b9c6bbc70c52986464772ea5bc2c200c942b208ac75675a3ced4072a",
+      "stream_sha256": "a15d08835387c1c46e8322daf76305c46fc0b9b2c50e793214736755ab101fc3",
+      "decoded_sha256": "eb177878e1aa2c06d6df9dfa9d97a6a55efcc01424d0b3cd687ecbf2bf7c9e14",
+      "input_yuv_sha256": "c6be9d3af9520764a3bcf1c72095580f0035de4929c22a1ef4147936d581170f",
+      "bitstream_bytes": 1865,
+      "cu_count": 155,
+      "partitions_sha256": "f37130fff8a6c8c4669081db9ba045d0aec6c32e6b175281a7d155da03b86fbf"
+    }
+  ],
+  "implementation": "Pinned source builds in manifests/codecs.lock.json, GCC 13.2.0, Release"
+}

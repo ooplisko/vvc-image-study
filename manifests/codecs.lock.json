@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "platform": "windows-x86_64",
+  "source_toolchain": {
+    "generator": "MinGW Makefiles",
+    "gcc_version": "13.2.0",
+    "cmake_minimum": "3.12",
+    "build_type": "Release"
+  },
+  "codecs": {
+    "vtm23-baseline": {
+      "family": "vtm",
+      "csf": false,
+      "trace": false,
+      "source_url": "https://github.com/ooplisko/VVCSoftware_VTM_CSF.git",
+      "source_commit": "8fc9675016f85fa7965e96a32661ca89833e2a0d",
+      "patch": null,
+      "patch_sha256": null
+    },
+    "vtm23-baseline-trace": {
+      "family": "vtm",
+      "csf": false,
+      "trace": true,
+      "source_url": "https://github.com/ooplisko/VVCSoftware_VTM_CSF.git",
+      "source_commit": "8fc9675016f85fa7965e96a32661ca89833e2a0d",
+      "patch": null,
+      "patch_sha256": null
+    },
+    "vtm23-csf": {
+      "family": "vtm",
+      "csf": true,
+      "trace": false,
+      "source_url": "https://github.com/ooplisko/VVCSoftware_VTM_CSF.git",
+      "source_commit": "8fc9675016f85fa7965e96a32661ca89833e2a0d",
+      "patch": "patches/vtm-csf.patch",
+      "patch_sha256": "5b730e28fbb76417dfc52d00605768b1aa3cdf3e1fa4704ab937b26f8bf1660d"
+    },
+    "vtm23-csf-trace": {
+      "family": "vtm",
+      "csf": true,
+      "trace": true,
+      "source_url": "https://github.com/ooplisko/VVCSoftware_VTM_CSF.git",
+      "source_commit": "8fc9675016f85fa7965e96a32661ca89833e2a0d",
+      "patch": "patches/vtm-csf.patch",
+      "patch_sha256": "5b730e28fbb76417dfc52d00605768b1aa3cdf3e1fa4704ab937b26f8bf1660d"
+    },
+    "vvenc-baseline": {
+      "family": "vvenc",
+      "csf": false,
+      "trace": false,
+      "source_url": "https://github.com/ooplisko/vvenc.git",
+      "source_commit": "6f767486ba2199d9f3f8a75b7739995bd3ed9034",
+      "patch": null,
+      "patch_sha256": null
+    },
+    "vvenc-baseline-trace": {
+      "family": "vvenc",
+      "csf": false,
+      "trace": true,
+      "source_url": "https://github.com/ooplisko/vvenc.git",
+      "source_commit": "6f767486ba2199d9f3f8a75b7739995bd3ed9034",
+      "patch": null,
+      "patch_sha256": null
+    },
+    "vvenc-csf": {
+      "family": "vvenc",
+      "csf": true,
+      "trace": false,
+      "source_url": "https://github.com/ooplisko/vvenc.git",
+      "source_commit": "408b42d6847c03403a0bceed1a0ce54f6d914b8e",
+      "patch": null,
+      "patch_sha256": null
+    },
+    "vvenc-csf-trace": {
+      "family": "vvenc",
+      "csf": true,
+      "trace": true,
+      "source_url": "https://github.com/ooplisko/vvenc.git",
+      "source_commit": "408b42d6847c03403a0bceed1a0ce54f6d914b8e",
+      "patch": null,
+      "patch_sha256": null
+    }
+  },
+  "vvdec": {
+    "source_url": "https://github.com/fraunhoferhhi/vvdec.git",
+    "source_commit": "4046482c5693d613aead9bc33a6f60630e20cca6"
+  }
+}

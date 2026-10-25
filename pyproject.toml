@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=65.5"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vvc-image-study"
+version = "0.0.0"
+description = "Reproducible VVC still-image experiments on Kodak and DIV2K"
+readme = "README.md"
+requires-python = "==3.11.*"
+license = {text = "MIT"}
+authors = [{name = "O. O. Plisko"}]
+dependencies = [
+  "numpy==2.4.6",
+  "scipy==1.17.1",
+  "opencv-python==4.11.0.86",
+  "Pillow==12.3.0",
+  "pandas==3.0.2",
+  "matplotlib==3.10.9",
+]
+
+[project.scripts]
+vvc-study = "vvcstudy.cli:main"
+
+[dependency-groups]
+dev = ["pytest==9.0.3", "ruff>=0.14", "PyYAML==6.0.3"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]

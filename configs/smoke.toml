@@ -1,0 +1,12 @@
+schema_version = 1
+name = "smoke"
+datasets = ["synthetic"]
+qps = [37]
+jpeg_qfs = [50, 75, 95]
+awgn_sigmas = [30]
+awgn_seeds = [20260811]
+sine_amplitudes = []
+bootstrap_resamples = 31
+bootstrap_seed = 20261022
+timing_repeats = 1
+timing_workers = 1

@@ -1,0 +1,14 @@
+schema_version = 1
+name = "full"
+datasets = ["kodak", "div2k"]
+qps = [22, 27, 32, 37]
+jpeg_qfs = [1, 100] # inclusive range
+awgn_sigmas = [5, 15, 30]
+awgn_seeds = [20260811, 20260812, 20260813]
+sine_amplitudes = [8, 16, 32]
+div2k_sigma = 30
+div2k_seed = 20260811
+bootstrap_resamples = 99999
+bootstrap_seed = 20261022
+timing_repeats = 3
+timing_workers = 1
