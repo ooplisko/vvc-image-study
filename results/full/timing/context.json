@@ -1,0 +1,28 @@
+{
+  "host": "Theobald",
+  "cpu_model": "12th Gen Intel(R) Core(TM) i7-12700F",
+  "logical_cpus": 20,
+  "platform": "Windows-10-10.0.26100-SP0",
+  "cpu_affinity": 0,
+  "repeats": 3,
+  "jpeg_batch": 32,
+  "opencv": "4.11.0",
+  "jpeg": {
+    "pillow": "12.3.0",
+    "libjpeg_turbo": "3.1.4.1",
+    "optimize": true,
+    "progressive": false,
+    "subsampling": 0,
+    "tables": "Pillow/libjpeg default tables scaled by QF",
+    "maxblock": 33554432
+  },
+  "encoder_sha256": "16a05ad767ee659380f97098c0c637cb6fb2d5c3c60d6281e474f579f5ae8eb9",
+  "config_sha256": "0ec6dd9876c269c0832e0a64ab20c015c6c839d266e108c88b30aa28c77391f9",
+  "timing_code_sha256": "5f90786ba3bc691e2dfa1f079854e625ed9ccc3eeae24276fb07b84e969151ea",
+  "encoding_code_sha256": "0a5dc7d9bef027fa6fb8bcaf89cef203beec2a314e083091bf58d5ee1f6937c5",
+  "runtime_hashes": {
+    "libgcc_s_seh-1.dll": "ab69b8ea0da902aee3be7d5dd2a6d55ba5aac8ea7143a2ad9c0761e6bde00b16",
+    "libstdc++-6.dll": "609cfc23df667b3ca4c92793b7d62131ce25bf68295babaa4528bcf6328201e1",
+    "libwinpthread-1.dll": "10eb8498f1fe8f4674cffc211dc6c7414e851e208ec9f369f7ff8885d8264146"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "complete": true,
+  "measurements": 837,
+  "matched_sha256": "2549f29c44511680a5f83bc97bfb1784ac2f15b48c5df4a3ba2cc29cf41930c3",
+  "files": [
+    {
+      "path": "context.json",
+      "bytes": 1119,
+      "sha256": "29d883b1c068989561b1a379aa263c7c7ee97d4e535fb36538729f24525ae23f"
+    },
+    {
+      "path": "paired.csv",
+      "bytes": 24745,
+      "sha256": "1549d21450c2b7cc4e78210982bcd8a5e8da8d30e0bb41b514d2556c61b3e586"
+    },
+    {
+      "path": "repeats.csv",
+      "bytes": 400213,
+      "sha256": "40c9cb17a9b8b4f71bc607d30835bc504453917aff5ff5278aba1cf8ba999c38"
+    },
+    {
+      "path": "summary.csv",
+      "bytes": 2233,
+      "sha256": "ac31710ade75a5a2513d6d48c9aa26d23a4ae255de996aa018607dcd45e3e941"
+    }
+  ]
+}

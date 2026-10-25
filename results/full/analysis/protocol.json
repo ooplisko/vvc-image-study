@@ -1,0 +1,16 @@
+{
+  "partition_bootstrap": {
+    "resamples": 99999,
+    "seed": 20260905
+  },
+  "partition_permutations": {
+    "resamples": 99999,
+    "seed": 20260906
+  },
+  "jpeg_vvc_bootstrap": {
+    "resamples": 99999,
+    "seed": 20261022
+  },
+  "sampling_unit": "source image",
+  "interpolation": false
+}
