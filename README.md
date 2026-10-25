@@ -39,6 +39,11 @@ reuses verified analysis outputs; `analyze --recompute` recalculates them.
 
 ## Run experiments
 
+The [Windows codec release](https://github.com/ooplisko/vvc-image-study/releases/tag/codecs-v1)
+provides a verified archive for running without a compiler. Follow the
+[download and import commands](docs/codecs.md#portable-windows-bundle), then use
+`-CodecMode bundle` with `reproduce.ps1`.
+
 Building the codecs requires CMake, MinGW-w64 GCC **13.2.0** and
 `mingw32-make` on `PATH`. Matrix experiments also require FFmpeg. Run
 `uv run --locked vvc-study doctor` to check available tools.

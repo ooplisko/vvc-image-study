@@ -29,6 +29,47 @@ hash is recorded. The partition and JPEG/VTM comparison uses OpenCV 4:4:4.
 
 ## Portable Windows bundle
 
+Download the qualified [codecs-v1 archive](https://github.com/ooplisko/vvc-image-study/releases/tag/codecs-v1)
+from the repository root in PowerShell:
+
+```powershell
+uv sync --locked
+New-Item -ItemType Directory -Force .cache/downloads | Out-Null
+Invoke-WebRequest -UseBasicParsing -Uri https://github.com/ooplisko/vvc-image-study/releases/download/codecs-v1/vvc-codecs-windows-x64.zip -OutFile .cache/downloads/vvc-codecs-windows-x64.zip
+uv run --locked vvc-study import-bundle --archive .cache/downloads/vvc-codecs-windows-x64.zip --sha256 7f60af60a93be540b0b6a1ba6dc2ad8071dd64c9db6bf567c628fb12501c6ea3
+.\reproduce.ps1 -Profile smoke -CodecMode bundle
+```
+
+Stop if any command reports an error. Import checks the archive against the
+SHA256 above and verifies its manifest and payload files. The same checksum is
+also supplied as `vvc-codecs-windows-x64.zip.sha256` in the release.
+
+The archive includes encoders, decoders, MinGW runtime DLLs, licenses, build
+metadata, synthetic-check results and file checksums. It does not include
+Python, FFmpeg, datasets or Windows system libraries. The small `smoke` profile
+needs no dataset or FFmpeg; `check-codecs` includes matrix controls and requires
+FFmpeg on `PATH`. Full experiments also require FFmpeg for the matrix stage.
+After installing FFmpeg, run the complete codec controls:
+
+```powershell
+uv run --locked vvc-study check-codecs --codec-mode bundle
+```
+
+Imported bundles are checked and cached under `.cache/bundles/`. Use
+`--codec-mode bundle` for CLI experiments or `-CodecMode bundle` with
+`reproduce.ps1`. For example:
+
+```powershell
+.\reproduce.ps1 -Profile full -CodecMode bundle -Workers 4
+```
+
+See [reproduction](reproduce.md) for result reuse, full recalculation and timing
+requirements. The companion `gcc-runtime-sources-13.2.0.zip` contains GCC source
+materials and is not needed to run the codecs. See
+[binary distribution](binary-distribution.md) for component sources and licenses.
+
+## Package a local build
+
 After building and checking the codecs:
 
 ```powershell
@@ -36,22 +77,6 @@ uv run --locked vvc-study package-codecs
 ```
 
 This creates `dist/vvc-codecs-windows-x64.zip` and a `.zip.sha256` sidecar.
-The archive includes encoders, decoders, MinGW runtime DLLs, licenses, build
-metadata, synthetic-check results and file checksums. It does not include
-Python, FFmpeg, datasets or Windows system libraries.
-
-Import the archive using its independently supplied SHA256:
-
-```powershell
-uv run --locked vvc-study import-bundle --archive C:/downloads/vvc-codecs-windows-x64.zip --sha256 <trusted-sha256>
-uv run --locked vvc-study check-codecs --codec-mode bundle
-.\reproduce.ps1 -Profile smoke -CodecMode bundle
-```
-
-Replace `<trusted-sha256>` with the actual 64-character checksum. Imported
-bundles are checked and cached under `.cache/bundles/`. Use `--codec-mode bundle`
-for CLI experiments or `-CodecMode bundle` with `reproduce.ps1` to run without
-a compiler. Bundle checks detect missing or changed payload files.
-
-Preserve all bundled notices and comply with the exact runtime distribution's
-redistribution requirements when sharing binaries. See [notices](../THIRD_PARTY_NOTICES.md).
+It does not publish a release. A new build can have a different checksum; use
+its own SHA256 when importing it. Preserve all bundled notices and provide
+the runtime source materials appropriate to that build when redistributing it.

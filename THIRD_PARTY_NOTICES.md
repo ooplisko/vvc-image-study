@@ -16,9 +16,13 @@ relicense datasets, codec sources, codec binaries or external Python packages.
   `libgcc_s_seh-1.dll`, `libstdc++-6.dll` and `libwinpthread-1.dll` from its
   recorded compiler installation. GCC, GCC Runtime Library Exception,
   MinGW-w64 and winpthreads notices are copied from that distribution.
-  These libraries are not covered by this project's MIT license. Before a
-  public binary release, confirm the redistribution requirements for the exact
-  runtime distribution, including corresponding source availability where required.
+  These libraries are not covered by this project's MIT license. The published
+  `codecs-v1` bundle uses unmodified DLLs from MinGW-Builds 13.2.0-rt_v11-rev0
+  (x86_64, POSIX threads, SEH, UCRT). Its release also provides GCC 13.2.0
+  sources, the listed GCC patches and build materials. See
+  [binary distribution](docs/binary-distribution.md) for exact sources, notices
+  and the runtime exception. New builds require their own matching source
+  materials and redistribution review.
 - **Kodak**: [Kodak Lossless True Color Image Suite](https://r0k.us/graphics/kodak/).
   Originals are obtained from their source and are not included in Git.
 - **DIV2K**: [official dataset](https://data.vision.ee.ethz.ch/cvl/DIV2K/), used for
