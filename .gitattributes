@@ -1,0 +1,8 @@
+# Preserve byte identities used by result, codec and timing manifests.
+* -text
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.ps1 text eol=crlf
+*.png binary
+*.pdf binary

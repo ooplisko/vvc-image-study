@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "vvc-image-study"
+authors:
+  - family-names: "Plisko"
+    given-names: "O. O."
+    affiliation: "National Aerospace University, Department of Information and Communication Technologies"
+    website: "https://dict.khai.edu/"
+license: MIT
+repository-code: "https://github.com/ooplisko/vvc-image-study"

@@ -1,0 +1,15 @@
+/.venv/
+/.idea/
+/.cache/
+/.build/
+/data/
+/runs/
+/results/smoke/
+/results/full/analysis/**/bootstrap_cache_*.npz
+/dist/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
