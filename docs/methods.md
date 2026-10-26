@@ -34,8 +34,14 @@ matrix series and from PSNR-RGB used for JPEG/VVC matching.
 
 Kodak analysis preserves paired-image bootstrap and permutation procedures,
 the fixed multiple-comparison families, leave-one-out checks and GLCM sensitivity.
-DIV2K CU/descriptor analysis remains descriptive. It must not be presented as
-having confidence intervals merely because the separate JPEG/VVC analysis does.
+DIV2K CU/descriptor analysis uses 99,999 paired source-image bootstrap samples
+(PCG64 seed 20260905), reranking observations in each sample. All six descriptors,
+four QPs and both conditions share each sampled image-index vector. Correlations
+and AWGN-minus-clean correlation changes have pointwise 95% percentile intervals.
+Changes also have simultaneous 95% basic bootstrap intervals based on the maximum
+absolute error over all 24 descriptor/QP contrasts. Their metadata and tables are
+in `results/full/analysis/partitions/div2k/`. DIV2K bpp correlations remain descriptive.
+An interval containing zero does not establish equivalence or noise invariance.
 
 ## Quantization matrices
 

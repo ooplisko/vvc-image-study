@@ -17,13 +17,16 @@ def _signature(root: Path, profile: str, resamples: int) -> dict:
 def seal_analysis(root: Path, profile: str = "full", resamples: int = 99_999) -> None:
     base = root / "results" / profile / "analysis"
     required = ["partitions/kodak/correlations.csv", "partitions/kodak/contrasts.csv",
+                "partitions/div2k/correlations_with_ci.csv",
+                "partitions/div2k/noise_correlation_changes.csv",
+                "partitions/div2k/bootstrap_metadata.json",
                 "partitions/div2k/descriptor_correlations.csv", "matrices/same_qp_deltas.csv",
                 "jpeg-vvc/correlations_with_ci.csv", "jpeg-vvc/matching_choice_differences.csv",
                 "jpeg-vvc/noise_correlation_changes.csv"]
     if any(not (base / name).is_file() for name in required):
         raise ValueError("Statistical outputs are incomplete.")
     files = [file_record(path, base) for path in sorted(base.rglob("*"))
-             if path.suffix in {".csv", ".png"}]
+             if path.suffix in {".csv", ".png"} or path.name == "bootstrap_metadata.json"]
     write_json(base / "manifest.json", {"schema_version": 1, "signature": _signature(root, profile, resamples),
                                          "files": files})
 

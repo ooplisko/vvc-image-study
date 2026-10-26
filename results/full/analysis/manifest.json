@@ -8,7 +8,7 @@
     },
     "validation_code": {
       "jpeg_analysis.py": "e72f3e3c12a5761e2751e636db914e8bab21132877c12aee512d604d0275c6d8",
-      "partition_analysis.py": "2f616ae0bd49cd96594b3384f2c1dd0fffd134061a84d272ff3f884d0d8e77dd",
+      "partition_analysis.py": "8e9449c09781512e2dff4638d40e06257e31fe8fba18daad56c8520dfdf2cdba",
       "statistics.py": "fd57a46ffc55d4c3453b9e68050d24bda683ac1c54b186125309fc34a320d424",
       "plots.py": "cf8e0ddc1ca7e9b35f933f14e388adca3aedd491b1f0a0c60442296c298817dd"
     }
@@ -410,9 +410,24 @@
       "sha256": "865006a60056966de5bb6a16162c373d50f15db481aa7c658d3e3b19f7b5bd3d"
     },
     {
+      "path": "partitions/div2k/bootstrap_metadata.json",
+      "bytes": 2247,
+      "sha256": "dce423225d3b9457bc3116d0fb508229e4cc8063639874fb797d218519ccff75"
+    },
+    {
+      "path": "partitions/div2k/correlations_with_ci.csv",
+      "bytes": 6457,
+      "sha256": "47dde66546070676ad2a3defb8e25b0b396540fc955d4d00117f66cef5673b7b"
+    },
+    {
       "path": "partitions/div2k/descriptor_correlations.csv",
       "bytes": 6387,
       "sha256": "61c1bfd536038cbb124307f65607ca90fb20e78c6df5556612477338ecbcd2e4"
+    },
+    {
+      "path": "partitions/div2k/noise_correlation_changes.csv",
+      "bytes": 5306,
+      "sha256": "30096180d4b2e5ddd21fec85f3d26521b46a65f503cbed458e0f804e008cf958"
     },
     {
       "path": "partitions/div2k/noise_summary.csv",

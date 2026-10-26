@@ -1,7 +1,8 @@
 """Fixed-condition CU associations for Kodak and full-resolution DIV2K.
 
 Kodak retains paired image bootstrap, permutation families, oriented contrasts,
-and sensitivity analyses. DIV2K remains descriptive. Input tables already contain
+and sensitivity analyses. DIV2K CU associations use paired image bootstrap.
+Input tables already contain
 measured descriptors; this module neither encodes images nor generates reports.
 """
 
@@ -318,6 +319,48 @@ def descriptive_tables(rows: list[dict], qps: tuple[int, ...] = QPS) -> tuple[li
     return correlations, pairs, summaries
 
 
+def run_div2k_statistics(rows: list[dict], output: Path, *, resamples: int = 99_999,
+                         seed: int = 20260905) -> dict:
+    """CU correlations and noisy-minus-clean changes, paired across all 100 images."""
+    descriptive_tables(rows)  # Validate the complete paired condition/QP grid.
+    cells, sources, x, y = build_cells(rows, expected_sources=100)
+    observed, draws = paired_spearman_bootstrap(x, y, n_resamples=resamples, seed=seed)
+    ci = percentile_intervals(observed, draws)
+    write_csv(output / "correlations_with_ci.csv", [
+        {**cell, "target": "cu_density_per_mpixel", "rho": observed[i],
+         **interval_row(ci, i, "ci_")} for i, cell in enumerate(cells)])
+
+    lookup = {(cell["distortion"], cell["qp"], cell["feature"]): i
+              for i, cell in enumerate(cells)}
+    clean = [lookup["clean", qp, feature] for qp in QPS for feature in FEATURES]
+    noisy = [lookup["awgn", qp, feature] for qp in QPS for feature in FEATURES]
+    differences = observed[noisy] - observed[clean]
+    difference_draws = draws[:, noisy] - draws[:, clean]
+    pointwise = percentile_intervals(differences, difference_draws)
+    simultaneous = simultaneous_basic_intervals(differences, difference_draws, alpha=0.05)
+    write_csv(output / "noise_correlation_changes.csv", [
+        {"qp": cells[a]["qp"], "feature": cells[a]["feature"],
+         "target": "cu_density_per_mpixel", "n_images": len(sources),
+         "contrast": "awgn_30_minus_clean", "rho_clean": observed[a],
+         "rho_awgn": observed[b], "rho_difference": differences[i],
+         **interval_row(pointwise, i, "ci_"),
+         "simultaneous_low": simultaneous["low"][i],
+         "simultaneous_high": simultaneous["high"][i]}
+        for i, (a, b) in enumerate(zip(clean, noisy, strict=True))])
+    details = {"inferential_statistics": True, "target": "cu_density_per_mpixel",
+               "bpp_correlations": "descriptive", "n_images": len(sources),
+               "resamples": resamples, "seed": seed, "rng": "PCG64",
+               "resampling_unit": "source image; shared indices for all conditions and QPs",
+               "ranks_recomputed_per_resample": True, "sources": sources,
+               "correlation_cells_with_ci": len(cells), "noise_contrasts": len(clean),
+               "pointwise_confidence": 0.95, "pointwise_method": "percentile",
+               "simultaneous_confidence": 0.95, "simultaneous_family_size": len(clean),
+               "simultaneous_method": "basic bootstrap maximum absolute error",
+               "simultaneous_critical_value": simultaneous["critical_value"]}
+    write_json(output / "bootstrap_metadata.json", details)
+    return details
+
+
 def load_validated_measurements(measurements_path: Path) -> dict[str, list[dict]]:
     """Check full registered grids without any resampling or output generation."""
     selected = normalize_measurements(read_csv(measurements_path))
@@ -365,6 +408,8 @@ def analyze_partitions(measurements_path: Path, output: Path, resamples: int = 9
                 write_csv(destination / f"{name}.csv", table)
             details.update(inferential_statistics=False, correlation_cells=len(tables[0]),
                            full_dataset_sample=dataset == "div2k")
+            if dataset == "div2k":
+                details.update(run_div2k_statistics(rows, destination, resamples=resamples, seed=seed))
         details["outputs"] = {path.name: sha256(path) for path in sorted(destination.iterdir())
                               if path.suffix in {".csv", ".npz"}}
         result["datasets"][dataset] = details

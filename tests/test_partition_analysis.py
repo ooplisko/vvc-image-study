@@ -5,7 +5,7 @@ from scipy.stats import spearmanr
 from vvcstudy.artifacts import read_csv, write_csv
 from vvcstudy.partition_analysis import (
     FEATURES, QPS, analyze_partitions, build_cells, contrasts,
-    descriptive_tables, normalize_measurements,
+    descriptive_tables, normalize_measurements, run_div2k_statistics,
 )
 
 
@@ -136,18 +136,45 @@ def div2k_rows(n=100):
     return rows
 
 
-def test_div2k_full_sample_remains_descriptive_and_uses_density(tmp_path):
+def test_div2k_full_sample_bootstraps_cu_density_and_keeps_bpp_descriptive(tmp_path):
     path, output = tmp_path / "div2k.csv", tmp_path / "analysis"
     write_csv(path, list(reversed(div2k_rows())))
     result = analyze_partitions(path, output, resamples=7)
     assert result["datasets"]["div2k"]["n_images"] == 100
-    assert result["datasets"]["div2k"]["inferential_statistics"] is False
+    assert result["datasets"]["div2k"]["inferential_statistics"] is True
+    assert result["datasets"]["div2k"]["bpp_correlations"] == "descriptive"
     correlations = read_csv(output / "div2k/descriptor_correlations.csv")
     assert len(correlations) == 96
     assert all(float(r["spearman_rho"]) == pytest.approx(-1) and r["n_images"] == "100" for r in correlations)
     assert all(r["cu_increased"] == "100" for r in read_csv(output / "div2k/noise_summary.csv"))
     assert len(read_csv(output / "div2k/paired_noise_effects.csv")) == 400
     assert not list(output.rglob("*.npz"))
+    changes = read_csv(output / "div2k/noise_correlation_changes.csv")
+    assert len(changes) == 24
+    assert all(float(r["rho_difference"]) == pytest.approx(0) for r in changes)
+
+
+def test_div2k_intervals_match_independent_paired_scipy_calculation(tmp_path):
+    rows = div2k_rows()
+    for row in rows:
+        i = int(row["source"][:4]) - 801
+        row["sobel_si"] = float((i*13 + (i % 7)*int(row["level"])) % 53)
+    rows = normalize_measurements(rows)["div2k"]
+    run_div2k_statistics(rows[::-1], tmp_path, resamples=99, seed=17)
+    ordered = {(r["source"], r["distortion"]): r for r in rows if r["qp"] == 32}
+    sources = sorted({r["source"] for r in rows})
+    x, y = [], []
+    for condition in ("clean", "awgn"):
+        x.append(np.array([ordered[s, condition]["sobel_si"] for s in sources]))
+        y.append(np.array([ordered[s, condition]["cu_density_per_mpixel"] for s in sources]))
+    indices = np.random.Generator(np.random.PCG64(17)).integers(0, 100, size=(99, 100))
+    changes = [spearmanr(x[1][k], y[1][k]).statistic - spearmanr(x[0][k], y[0][k]).statistic
+               for k in indices]
+    row = next(r for r in read_csv(tmp_path / "noise_correlation_changes.csv")
+               if r["feature"] == "sobel_si" and r["qp"] == "32")
+    np.testing.assert_allclose([float(row["ci_low"]), float(row["ci_high"])],
+                               np.quantile(changes, [0.025, 0.975]), atol=1e-14)
+    assert len(read_csv(tmp_path / "correlations_with_ci.csv")) == 48
 
 
 def test_div2k_missing_original_is_not_a_full_sample(tmp_path):
