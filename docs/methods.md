@@ -86,6 +86,9 @@ The serial timing protocol and exact timer boundaries are documented in
 metadata and are not pooled with the serial benchmark on 24 clean images.
 Report absolute times, R and quality differences for the same pairs. A universal
 codec-selection threshold is not implied by a descriptor correlation.
+The measured VTM executable was compiled with tracing support. Trace output and
+reconstruction output are disabled during timing; the overhead of compiling in
+tracing support was not measured separately. Results characterize this build.
 
 For each VTM image/QP point, use the median of three elapsed-time measurements.
 For each selected JPEG image/QF point, divide each batch's elapsed time by its
