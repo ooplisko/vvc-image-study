@@ -11,7 +11,7 @@
       "tables": {
         "tables/encodings.csv": {
           "rows": 1248,
-          "sha256": "bd8479fd6f470a7f1eac6106df0a09828abd886a76da9d35b7af9036af5ac382"
+          "sha256": "789802975a92b8d81249d8972cff6d951958d18fde1efca838450e48bff5a9b0"
         }
       }
     },
@@ -53,7 +53,7 @@
       "tables": {
         "tables/encodings.csv": {
           "rows": 992,
-          "sha256": "24432efa763295e914c6f28675232a4faad6e4162e5293f01b3de2f29f6df255"
+          "sha256": "dad6d1a97d32ec57d98a231e88bc4fc1a15a38dfe26c0cbb2fc921b919f6b40d"
         },
         "tables/measurements.csv": {
           "bytes": 4966215,

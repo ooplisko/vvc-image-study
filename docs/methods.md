@@ -26,6 +26,11 @@ The `D_QP` trace provides final luma CUs. The decoder output must equal the
 encoder reconstruction; CU rectangles must cover the coded extent without gaps
 or overlaps. DIV2K conformance padding stays internal to VTM. File bpp uses
 original visible pixels; CU density uses coded area, including codec padding.
+PSNR-Y compares the actual YUV input with its reconstruction. The supplied
+clean Kodak OpenCV series has median PSNR-Y 42.2502, 38.5711, 34.9805 and
+31.67125 dB at QP 22/27/32/37. These are medians, not the full observed range
+or thresholds of perceptual invisibility. Keep them separate from the FFmpeg
+matrix series and from PSNR-RGB used for JPEG/VVC matching.
 
 Kodak analysis preserves paired-image bootstrap and permutation procedures,
 the fixed multiple-comparison families, leave-one-out checks and GLCM sensitivity.
