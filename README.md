@@ -56,8 +56,8 @@ Building the codecs requires CMake, MinGW-w64 GCC **13.2.0** and
 .\reproduce.ps1 -Profile full -Workers 4
 ```
 
-The complete workflow reuses verified result tables and completed jobs. It
-encodes only missing work, then measures encoding time and analyzes the results.
+The complete workflow reuses verified result tables, timing summaries and
+analysis outputs. It encodes and measures only missing work.
 From an empty results directory this is a long computation. The timing stage
 runs sequentially and requires an idle PC.
 
@@ -70,6 +70,12 @@ uv run --locked vvc-study run --study matrices --workers 4
 uv run --locked vvc-study run --study jpeg-vvc --workers 4
 uv run --locked vvc-study run --study timing --workers 1
 uv run --locked vvc-study analyze
+# Regenerate figures only; no encoding or bootstrap.
+uv run --locked vvc-study plot
+# Optional: recompute matrix RGB quality from retained raw frames, without encoding.
+uv run --locked vvc-study refresh-quality
+uv run --locked vvc-study plot --study matrices
+uv run --locked vvc-study plot --study anchors
 ```
 
 `run --recompute` regenerates a stage from its job records, encoding absent or
@@ -84,8 +90,15 @@ see [codec setup](docs/codecs.md).
   sigma 30. Images are neither cropped nor resized.
 - **Partitions:** VTM, QP 22/27/32/37; final luma coding units and six image
   descriptors, with paired statistical and sensitivity analyses.
-- **Matrices:** baseline and CSF configurations for VTM and VVenC; four QPs,
-  with partition traces at QP 32.
+- **Matrices:** baseline and modified quantization matrices at four QPs;
+  VTM with OpenCV/FFmpeg 4:4:4 and VVenC with FFmpeg 4:2:0. RGB quality uses
+  the original PNG reference throughout.
+- **Published anchors:** descriptive Kodak RD comparisons with Duan/lossy-vae
+  and CompressAI, with both bpp and PSNR differences retained.
+- **Validation:** optional same-version VTM 18.0 reproduction at QP 22/27/32/37
+  and independent checks of RGB metrics on identical image pairs. See
+  [validation commands and scope](docs/validation.md). All RGB quality paths use
+  the shared, checked PSNR and `pytorch-msssim` implementation.
 - **JPEG/VVC:** JPEG QF 1–100 on 248 clean/noisy inputs; measured pairs selected
   separately by PSNR-RGB and MS-SSIM-RGB, without interpolation.
 - **Timing:** all 24 clean Kodak images; three VTM repeats per QP and repeated
@@ -119,9 +132,15 @@ docs/          Setup, methods and result formats
 ```
 
 Downloaded data, builds, raw job files and environments are ignored by Git.
-Compact result tables and figures can be versioned with the code. See
+Compact result tables and seven figures embedded in the validation pages are
+versioned with the code. Other figures and bootstrap caches remain local. See
 [reproduction](docs/reproduce.md), [methods](docs/methods.md),
 [result files](docs/artifacts.md) and [contributing](CONTRIBUTING.md).
+
+The [Duan / lossy-vae comparison](docs/vtm_validation/lossy-vae/README.md) and
+[CompressAI comparison](docs/vtm_validation/compressai/README.md) describe the
+published anchors, local conversion/matrix results and their limits, with
+numerical tables and reproducible figures.
 
 The project code uses the [MIT license](LICENSE); external materials have their
 own [terms](THIRD_PARTY_NOTICES.md). Citation metadata is in [CITATION.cff](CITATION.cff).

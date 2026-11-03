@@ -23,7 +23,9 @@ Do not mix a structural refactor with altered experimental parameters.
 
 Do not change numerical expectations merely to silence a failed test. Explain
 the cause and verify corrected calculations. Keep numerical outputs in CSV/JSON
-and figures in PNG. User documentation is maintained separately from generated
+and figures in PNG. Only the seven documentation figures listed in `.gitignore`
+belong in Git; per-image plots and bootstrap caches are local outputs. Use
+`vvc-study plot` to regenerate figures without rerunning statistics. User documentation is maintained separately from generated
 outputs. Editor-specific project files do not belong in the codebase.
 
 Keep the byte-preserving rules in `.gitattributes`. Result manifests and timing

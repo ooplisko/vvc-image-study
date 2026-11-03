@@ -12,25 +12,45 @@
 - `timing/`: completed serial time measurements and summaries for 24 clean Kodak images.
 - `manifest.json`: experiment configuration and checked result-stage identities.
 
-The full set has 2,432 encoding points, 25,792 JPEG/VTM measurements and 1,984
+The full set has 2,528 unique encoding points, 25,792 JPEG/VTM measurements and 1,984
 quality matches. A file-location field may be empty when only the measured table
 is distributed. A checksum identifies the measured file; it does not mean the
 raw file is included. Fresh runs record raw paths relative to the repository.
 
 `verify` checks compact results. The separate `verify --jobs` checks saved plans
-and raw artifacts under `runs/full/`. Statistical output hashes are checked by
-`analyze`; `analyze --recompute` recalculates the analysis.
+and raw artifacts under `runs/full/`. Numerical analysis hashes are checked by
+`analyze`; `analyze --recompute` recalculates the analysis. Optional PNG files
+are excluded from this integrity record. `plot` regenerates figures from the
+checked measurements without repeating bootstrap or encoding.
+
+The matrix grid contains 576 points, including 96 OpenCV baseline points shared
+with the primary studies. `analysis/matrices/` includes per-image matrix changes,
+conversion changes and mean RD points, grouped by codec and color conversion.
+`analysis/anchors/` contains published reference points, local means and actual
+nearest-bpp comparisons with both rate and quality gaps.
+It also contains `cross_anchor.csv` for published-to-published comparisons and
+separate PSNR/MS-SSIM figures used by the two pages under `docs/vtm_validation/`.
+Points outside the other anchor's bpp range are explicitly excluded from pairing.
+
+`refresh-quality` recalculates matrix RGB quality from the original Kodak PNGs
+and retained decoder outputs, without encoding. It checks source hashes,
+compressed sizes and reconstruction agreement before replacing the table.
+Its `tables/matrix_rgb_checks.csv` and `matrix_rgb_context.json` record the files,
+reference and conversion implementation. Missing raw files cause an error;
+the command never silently starts an encoder. Afterwards, regenerate the matrix
+and anchor analyses. Compact tables remain sufficient for normal analysis.
 
 ## Timing outputs
 
-- `timing/repeats.csv`: 837 measurements: 288 VTM repeats and 549 JPEG batches.
+- `timing/repeats.csv`: 834 measurements: 288 VTM repeats and 546 JPEG batches.
   Each JPEG batch contains 32 encodes; `elapsed_seconds` is the batch time divided
   by 32. Warmups are excluded.
 - `timing/paired.csv`: 192 image/QP/quality-metric comparisons, with median encoding
   times, additional VTM time, file-size ratio R and the actual quality difference.
 - `timing/summary.csv`: eight summaries (four QPs × two quality metrics). Mean,
   sample standard deviation and median are calculated over the 24 per-image values.
-- `timing/context.json`: CPU, affinity, software versions and protocol identities.
+- `timing/context.json`: CPU, affinity, software versions and protocol identities;
+  separately recorded contexts are retained when measurements span sessions.
 - `timing/manifest.json`: summary checksums and the matching-table identity.
 
 `verify` checks the summary files and their matching-table identity. `verify --jobs`
@@ -65,7 +85,12 @@ and `dist/`. It also excludes Python caches and local editor files. CSV, JSON
 and PNG are not ignored globally because configurations and result tables use
 those extensions.
 
-Keep compact result tables and selected figures in Git. Large raw YUV files,
+Keep compact CSV/JSON results and the seven figures embedded in the validation
+pages in Git: five anchor figures and two VTM18 QP figures. Other PNGs, synthetic
+validation outputs and all bootstrap NPZ caches are ignored and regenerated
+locally. Numerical results remain available without the optional figures.
+
+Large raw YUV files,
 traces, downloaded originals and executables stay outside ordinary commits.
 Use separate assets with SHA256 manifests when distributing large outputs.
 Codec bundles include their licenses; dataset redistribution follows each
