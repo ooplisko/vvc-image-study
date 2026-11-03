@@ -1,0 +1,24 @@
+{
+  "protocol": "jpeg-vvc-paired-uncertainty-v1",
+  "input_sha256": [
+    "58c16ca9a743707b4af1fa75e40d0dc6d9f5cdbd05b6e86e1002460022f67d5c"
+  ],
+  "analysis_sha256": "e72f3e3c12a5761e2751e636db914e8bab21132877c12aee512d604d0275c6d8",
+  "statistics_sha256": "fd57a46ffc55d4c3453b9e68050d24bda683ac1c54b186125309fc34a320d424",
+  "resamples": 99999,
+  "seed": 20261022,
+  "n_rows": 1984,
+  "n_cells": 672,
+  "interval_scope": "pointwise_95_percent",
+  "interpolation": false,
+  "sampling_unit": "source image within dataset; paired conditions and matching choices",
+  "complete": true,
+  "outputs": {
+    "correlations_with_ci.csv": "bcd59edd35fb671063796369f8450d96bcf572cd3aee5f249514e34d22578f77",
+    "coverage.csv": "0a27a3ef06884afe6ad58ecb1ba5d7b22c620b699625ab90829885a44be90ce8",
+    "quality_sensitivity.csv": "33a60638e7c1b3f0510ecd1531d3e1bafe0aa27f47a053850a232aaabe1b3768",
+    "gap_associations.csv": "e224b92421bc4fb9f1c19223aba9b07f17b0e722d3ab14f91f494f63ab43c1f9",
+    "matching_choice_differences.csv": "2f2f6e75be5858f1230cdd2a25dcb637f78cdbd675c1648b57a1277bcd2a3d51",
+    "noise_correlation_changes.csv": "604ab087e8a083d9ed07b26f54407a7921f299784169b9d5766ade53929bab7a"
+  }
+}

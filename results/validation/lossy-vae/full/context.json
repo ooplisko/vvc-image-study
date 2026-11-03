@@ -1,0 +1,13 @@
+{
+  "status": "complete",
+  "completed": 96,
+  "expected": 96,
+  "retained_streams": 26,
+  "comparison_available": true,
+  "scope": "Measured replication differences; completion is not a claim of numerical equality.",
+  "configuration_sha256": "141fe9ca25f9dc2cc2ee762f9e771115c7be1e65bf6aba336da302a5b8238b89",
+  "manifest_sha256": "919bcd49767742f116e56eb4677371684d88801aaa1a4c8c15432f30f75f5fd5",
+  "plan_sha256": "c5140e4bc8690b8c2d7fedb8ef067e7f8c068b8f63c1a97effd6cff44b35f1ed",
+  "output": "D:\\VTM\\vvc-image-study\\results\\validation\\lossy-vae\\full",
+  "measurements_sha256": "38856ea2ab6a714e9b4a34ca95a9df3c75e7ce7af49a32936eebfb8e8609e147"
+}

@@ -9,6 +9,7 @@ from pathlib import Path
 
 from .artifacts import identity, read_csv, read_json, sha256, write_json
 from .partition_analysis import normalize_measurements, validate_measurements, descriptive_tables
+from .metrics import CURRENT_RGB_PROTOCOL
 
 
 STUDIES = ("partitions", "div2k", "matrices", "jpeg-vvc")
@@ -33,11 +34,12 @@ def encoding_key(row: dict) -> tuple:
 def stage_rows(rows: list[dict], study: str) -> list[dict]:
     if study in {"partitions", "div2k"}:
         dataset = "kodak" if study == "partitions" else "div2k"
-        return [r for r in rows if r["dataset"] == dataset and r["conversion"] == "opencv_444"]
+        return [r for r in rows if r["dataset"] == dataset and r["conversion"] == "opencv_444"
+                and r["mode"] == "baseline"]
     if study == "matrices":
-        return [r for r in rows if r["conversion"].startswith("ffmpeg")]
+        return [r for r in rows if r["dataset"] == "kodak" and r["distortion"] == "clean"]
     if study == "jpeg-vvc":
-        return [r for r in rows if r["conversion"] == "opencv_444" and
+        return [r for r in rows if r["conversion"] == "opencv_444" and r["mode"] == "baseline" and
                 (r["distortion"] == "clean" or (r["distortion"] == "awgn" and
                  _integer(r["level"]) == "30" and _integer(r.get("seed")) == "20260811"))]
     raise ValueError(f"Unknown result stage: {study}")
@@ -92,22 +94,26 @@ def _check_partitions(rows: list[dict], dataset: str) -> dict:
 
 
 def _check_matrices(rows: list[dict]) -> dict:
-    expected = {(source, qp, mode, codec) for source, qp, mode, codec in itertools.product(
-        SOURCES["kodak"], QPS, ("baseline", "csf"), ("vtm", "vvenc"))}
+    expected = {(source, qp, mode, codec, conversion) for source, qp, mode, (codec, conversion)
+                in itertools.product(SOURCES["kodak"], QPS, ("baseline", "csf"),
+                                     (("vtm", "ffmpeg_444"), ("vtm", "opencv_444"),
+                                      ("vvenc", "ffmpeg_420")))}
     keys = [{**row, "family": "vvenc" if row["codec"].startswith("vvenc") else "vtm"} for row in rows]
-    _grid(keys, ("source", "qp", "mode", "family"), expected, "matrix points384")
+    _grid(keys, ("source", "qp", "mode", "family", "conversion"), expected, "matrix points576")
     for row in keys:
-        expected_conversion = "ffmpeg_420" if row["family"] == "vvenc" else "ffmpeg_444"
-        _require(row["dataset"] == "kodak" and row["conversion"] == expected_conversion,
+        expected_conversions = {"ffmpeg_420"} if row["family"] == "vvenc" else {"ffmpeg_444", "opencv_444"}
+        _require(row["dataset"] == "kodak" and row["conversion"] in expected_conversions,
                  "Unexpected matrix color protocol")
+        if row["conversion"].startswith("ffmpeg"):
+            _require(row.get("rgb_protocol") == "original_rgb8_v1", "Matrix RGB reference is not original RGB8")
         _require(row["distortion"] == "clean" and _integer(row["level"]) == "0" and not _integer(row.get("seed")),
                  "Matrix comparisons require clean images")
         _close(row["file_bpp"], int(row["bitstream_bytes"]) * 8 / (int(row["width"]) * int(row["height"])), "matrix bpp")
         for metric in ("psnr_y_db", "psnr_rgb_db", "msssim_rgb"):
             _require(math.isfinite(float(row[metric])), f"Missing matrix metric {metric}")
-        if _integer(row["qp"]) == "32":
+        if _integer(row["qp"]) == "32" and row["conversion"].startswith("ffmpeg"):
             _require(0 < int(row["cu_count"]) <= int(row["width"]) * int(row["height"]), "Invalid matrix CU count")
-    return {"encodes": len(rows), "partition_summaries": 96, "partition_qp": 32}
+    return {"encodes": len(rows), "ffmpeg_partition_summaries": 96, "partition_qp": 32}
 
 
 def _check_jpeg(base: Path) -> dict:
@@ -168,6 +174,8 @@ def _stage_record(root: Path, profile: str, study: str) -> dict:
         raise ValueError("Completed result stages use the full profile; verify smoke jobs separately.")
     base = root / "results" / profile
     rows = stage_rows(read_csv(base / "tables/encodings.csv"), study)
+    _require(all(r.get("quality_protocol") == CURRENT_RGB_PROTOCOL for r in rows),
+             "Encoding metric protocol differs from the active implementation")
     if study in {"partitions", "div2k"}:
         counts = _check_partitions(rows, "kodak" if study == "partitions" else "div2k")
     elif study == "matrices":
@@ -183,6 +191,8 @@ def _stage_record(root: Path, profile: str, study: str) -> dict:
     if study == "jpeg-vvc":
         for name in ("measurements.csv", "actual_by_qp.csv"):
             path = base / "tables" / name
+            _require(all(r.get("quality_protocol") == CURRENT_RGB_PROTOCOL for r in read_csv(path)),
+                     f"Mixed or obsolete metric protocol: {name}")
             tables["tables/" + name] = {"bytes": path.stat().st_size, "sha256": sha256(path)}
     return {"config_sha256": sha256(root / "configs" / f"{profile}.toml"),
             "counts": counts, "tables": tables}

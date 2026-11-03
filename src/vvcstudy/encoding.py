@@ -14,7 +14,8 @@ import numpy as np
 from PIL import Image, ImageFile, JpegImagePlugin, features
 
 from .artifacts import file_record, sha256, write_csv
-from .metrics import calculate_color_metrics, opencv_yuv_to_rgb8, psnr, quality
+from .color import RGB_PROTOCOL, reconstruction_rgb
+from .metrics import CURRENT_RGB_PROTOCOL, opencv_yuv_to_rgb8, psnr, quality
 from .partitions import parse_trace, summarize_partitions
 
 
@@ -127,6 +128,7 @@ def execute_encode(job: dict, folder: Path) -> dict:
     values = {**{key: spec[key] for key in ("dataset", "source", "distortion", "level", "seed",
                                             "qp", "mode", "codec", "conversion")},
               "width": width, "height": height, "stimulus": source.stem,
+              "quality_protocol": CURRENT_RGB_PROTOCOL if spec.get("measure_rgb_quality", True) else "not_measured",
               "bitstream_bytes": (folder / "stream.vvc").stat().st_size,
               "file_bpp": (folder / "stream.vvc").stat().st_size * 8 / (width * height),
               "process_elapsed_seconds": elapsed,
@@ -136,13 +138,16 @@ def execute_encode(job: dict, folder: Path) -> dict:
         if planes.size != width * height * 3 or planes.max() > 1023:
             raise ValueError("Invalid visible 10-bit 4:4:4 reconstruction.")
         planes = planes.reshape(3, height, width)
-        values.update(quality(rgb, opencv_yuv_to_rgb8(planes, 10)))
+        if spec.get("measure_rgb_quality", True):
+            values.update(quality(rgb, opencv_yuv_to_rgb8(planes, 10)))
         ref_y = np.fromfile(folder / "input.yuv", dtype=np.uint8, count=width * height)
         values["psnr_y_db"] = psnr(ref_y.astype(np.float64) * 4, planes[0].ravel(), peak=1020)
     else:
-        values.update(calculate_color_metrics(folder / "input.yuv", folder / "decoded.yuv",
-                                              width, height, chroma_format=spec["conversion"][-3:]))
-        # Matrix series reports the encoder's PSNR-Y alongside YUV-derived RGB metrics.
+        if spec.get("measure_rgb_quality", True):
+            values.update(quality(rgb, reconstruction_rgb(folder / "decoded.yuv", width, height,
+                                  spec["conversion"], ffmpeg=job.get("ffmpeg", "ffmpeg"))))
+        values["rgb_protocol"] = RGB_PROTOCOL
+        # PSNR-Y remains relative to the actual YUV supplied to the encoder.
         match = re.search(r"\bY\s+([\d.]+)\s+dB", log)
         if match:
             values["psnr_y_db"] = float(match.group(1))
@@ -185,7 +190,8 @@ def execute_jpeg(job: dict, folder: Path) -> dict:
         tables[str(qf)] = qtables
         rows.append({"codec": "JPEG", "parameter": qf, "bytes": len(payload),
                      "bpp": len(payload) * 8 / (width * height),
-                     "file": path.name, "sha256": item["sha256"], **quality(rgb, reconstructed)})
+                     "file": path.name, "sha256": item["sha256"], "quality_protocol": CURRENT_RGB_PROTOCOL,
+                     **quality(rgb, reconstructed)})
     write_csv(folder / "measurements.csv", rows)
     write_json(folder / "quantization_tables.json", tables)
     artifacts += [file_record(folder / name, folder)

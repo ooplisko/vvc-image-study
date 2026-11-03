@@ -101,6 +101,8 @@ def _build_vtm(root: Path, name: str, item: dict, compiler: dict, parallel: int)
              "-DCMAKE_POLICY_VERSION_MINIMUM=3.5",
              "-DCMAKE_CXX_COMPILER=" + Path(compiler["paths"]["g++"]).as_posix(),
              "-DENABLE_TRACING=" + ("ON" if item["trace"] else "OFF")]
+    if item.get("cxx_flags"):
+        flags.append("-DCMAKE_CXX_FLAGS=" + item["cxx_flags"])
     print(f"Building {name} ({parallel} compiler jobs)", flush=True)
     _run(["cmake", "-S", str(source), "-B", str(build_dir), *flags])
     compile_targets(build_dir, ["EncoderApp", "DecoderApp"], parallel)

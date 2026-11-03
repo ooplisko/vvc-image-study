@@ -1,0 +1,14 @@
+{
+  "rgb_protocol": "original_rgb8_v1",
+  "points": 576,
+  "reencoded_points": 0,
+  "reference": "original Kodak RGB8 PNG",
+  "reconstruction_bit_depth": 10,
+  "ffmpeg_inverse": "limited BT.601 to RGB24; bicubic+accurate_rnd+full_chroma_int+bitexact",
+  "ffmpeg_sha256": "09948d4cdd0650da6ff5a87577469f2a218dc2615ae379f8f734d24c49de0f73",
+  "ffmpeg_version": "ffmpeg version 8.1.1-full_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers",
+  "color_code_sha256": "eb5557a45e95b2c684f40580cdd8b98852bc69e037cb578208314d3d65419a5d",
+  "metrics_code_sha256": "55502316430d68923bd7ab9b4827ef14f4e77ba0aa8712987d7d2986cb38326b",
+  "quality_protocol": "pytorch_rgb_v1",
+  "measurement_manifest_sha256": "df5a84d5b80425019565c2f620afca49b0ae57d1817cc1d45bd05d279d4596de"
+}

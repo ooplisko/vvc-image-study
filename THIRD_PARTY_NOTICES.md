@@ -31,6 +31,20 @@ relicense datasets, codec sources, codec binaries or external Python packages.
   Original images are downloaded from the dataset provider.
 - **Python dependencies**: versions and distributions are recorded in `uv.lock`;
   their respective package licenses remain applicable.
+- **Published numerical anchors**: `manifests/anchors.json` attributes the Kodak
+  measurements to [Duan / lossy-vae](https://github.com/duanzhiihao/lossy-vae)
+  and [InterDigital / CompressAI](https://github.com/InterDigitalInc/CompressAI).
+  These are external reported measurements, not measurements made by this project.
+- **VTM18 replication configuration**: `configs/codecs/vtm18_duan.cfg` is the
+  configuration distributed with Duan's lossy-vae evaluation scripts; the pinned
+  source URL is in `manifests/validation.json`. Its upstream VTM copyright and
+  BSD terms are retained in `configs/codecs/VTM-LICENSE.txt`. The optional VTM18
+  build also retains the source distribution's `COPYING` file.
+- **RGB metrics and comparison**: the project calls the pinned PyTorch and
+  `pytorch-msssim` directly. The latter is MIT-licensed, copyright Gongfan Fang;
+  installed packages retain their own license files. CompressAI and Duan source
+  revisions are attributed in `manifests/validation.json`; their evaluation
+  code is consulted to specify the comparison, not relabeled as project code.
 
 Scientific figures under `results/` may contain dataset image content;
 the image owners' rights remain applicable. Do not interpret the root MIT

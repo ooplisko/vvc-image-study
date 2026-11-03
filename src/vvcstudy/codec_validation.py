@@ -13,11 +13,17 @@ CODECS = ("vtm23-baseline-trace", "vtm23-csf-trace", "vvenc-baseline-trace", "vv
 
 def control_jobs(root: Path, codecs: dict) -> list[dict]:
     # The second odd-sized smoke image is tested separately in the VTM padding pipeline.
-    inputs = prepare_inputs(root, "synthetic", [("clean", 0, None)], "smoke")[:1]
+    inputs = prepare_inputs(root, "synthetic", [("clean", 0, None)], "smoke", codec_controls=True)[:1]
     settings = {**config(root, "smoke"), "qps": [22, 32]}
     jobs = encode_jobs(root, inputs, settings, codecs)
     if set(CODECS).issubset(codecs):
-        jobs += encode_jobs(root, inputs, settings, codecs, matrices=True)
+        # Keep the registered controls: OpenCV baseline is already covered above;
+        # matrix controls qualify both patched codecs on the FFmpeg inputs.
+        jobs += [job for job in encode_jobs(root, inputs, settings, codecs, matrices=True)
+                 if job["spec"]["conversion"].startswith("ffmpeg")]
+    for job in jobs:
+        # Fixed 96-pixel controls qualify codec bytes/partitions, not RGB metrics.
+        job["spec"]["measure_rgb_quality"] = False
     return jobs
 
 

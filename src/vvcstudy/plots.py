@@ -39,7 +39,7 @@ def jpeg_plots(rows: list[dict], output: Path) -> None:
         plt.close(fig)
 
 
-def matrix_plots(paths: list[Path], output: Path) -> None:
+def matrix_tables(paths: list[Path], output: Path) -> tuple[dict, list[dict]]:
     output.mkdir(parents=True, exist_ok=True)
     indexed = {}
     for path in paths:
@@ -47,41 +47,77 @@ def matrix_plots(paths: list[Path], output: Path) -> None:
             image = row.get("image") or row.get("source", "")
             if not image.startswith("kodim") or row.get("mode") not in {"baseline", "csf"}:
                 continue
-            if row.get("conversion") and not row["conversion"].startswith("ffmpeg"):
+            if row.get("distortion", "clean") != "clean":
                 continue
             codec = ("vvenc" if "vvenc" in row.get("codec", "") else "vtm") if row.get("codec") else (
                 "vvenc" if "vvenc" in path.parts else "vtm")
-            key = codec, Path(image).stem, int(row["qp"]), row["mode"]
+            conversion = row.get("conversion", "ffmpeg_420" if codec == "vvenc" else "ffmpeg_444")
+            key = codec, conversion, Path(image).stem, int(row["qp"]), row["mode"]
             indexed[key] = row
     deltas = []
-    for (codec, image, qp, mode), baseline in indexed.items():
-        if mode != "baseline" or (codec, image, qp, "csf") not in indexed:
+    for (codec, conversion, image, qp, mode), baseline in indexed.items():
+        if mode != "baseline" or (codec, conversion, image, qp, "csf") not in indexed:
             continue
-        csf = indexed[codec, image, qp, "csf"]
+        csf = indexed[codec, conversion, image, qp, "csf"]
         b0, b1 = (float(r.get("bpp") or r["file_bpp"]) for r in (baseline, csf))
         y0, y1 = (float(r.get("psnr_y") or r["psnr_y_db"]) for r in (baseline, csf))
-        deltas.append({"codec": codec, "image": image, "qp": qp,
-                       "bpp_change_percent": 100 * (b1 / b0 - 1), "psnr_y_change_db": y1 - y0})
+        deltas.append({"codec": codec, "conversion": conversion, "image": image, "qp": qp,
+                       "bpp_change_percent": 100 * (b1 / b0 - 1), "psnr_y_change_db": y1 - y0,
+                       "psnr_rgb_change_db": float(csf["psnr_rgb_db"]) - float(baseline["psnr_rgb_db"])})
     write_csv(output / "same_qp_deltas.csv", deltas)
     groups = defaultdict(list)
     for row in deltas:
-        groups[row["codec"], row["qp"]].append(row)
+        groups[row["codec"], row["conversion"], row["qp"]].append(row)
     write_csv(output / "same_qp_summary.csv", [
-        {"codec": key[0], "qp": key[1], "n_images": len(group),
+        {"codec": key[0], "conversion": key[1], "qp": key[2], "n_images": len(group),
          "mean_bpp_change_percent": statistics.mean(r["bpp_change_percent"] for r in group),
-         "mean_psnr_y_change_db": statistics.mean(r["psnr_y_change_db"] for r in group)}
+         "mean_psnr_y_change_db": statistics.mean(r["psnr_y_change_db"] for r in group),
+         "mean_psnr_rgb_change_db": statistics.mean(r["psnr_rgb_change_db"] for r in group)}
         for key, group in sorted(groups.items())])
-    for codec, image in sorted({(key[0], key[1]) for key in indexed}):
+    conversions = []
+    for (codec, conversion, image, qp, mode), opencv in indexed.items():
+        if codec != "vtm" or conversion != "opencv_444":
+            continue
+        ffmpeg = indexed.get((codec, "ffmpeg_444", image, qp, mode))
+        if ffmpeg is not None:
+            conversions.append({"image": image, "qp": qp, "mode": mode,
+                                "contrast": "ffmpeg_444_minus_opencv_444",
+                                "bpp_change_percent": 100 * (float(ffmpeg["file_bpp"]) / float(opencv["file_bpp"]) - 1),
+                                "psnr_rgb_change_db": float(ffmpeg["psnr_rgb_db"]) - float(opencv["psnr_rgb_db"])})
+    write_csv(output / "conversion_deltas.csv", conversions)
+    means = []
+    for codec, conversion, qp, mode in sorted({(k[0], k[1], k[3], k[4]) for k in indexed}):
+        group = [row for k, row in indexed.items() if (k[0], k[1], k[3], k[4]) == (codec, conversion, qp, mode)]
+        means.append({"codec": codec, "conversion": conversion, "qp": qp, "mode": mode,
+                      "n_images": len(group), **{metric: statistics.mean(float(r[metric]) for r in group)
+                                               for metric in ("file_bpp", "psnr_rgb_db", "msssim_rgb")}})
+    write_csv(output / "mean_rd.csv", means)
+    return indexed, means
+
+
+def matrix_plots(paths: list[Path], output: Path) -> None:
+    indexed, means = matrix_tables(paths, output)
+    fig, axis = plt.subplots(figsize=(8, 5), constrained_layout=True)
+    for codec, conversion, mode in sorted({(r["codec"], r["conversion"], r["mode"]) for r in means}):
+        group = [r for r in means if (r["codec"], r["conversion"], r["mode"]) == (codec, conversion, mode)]
+        axis.plot([r["file_bpp"] for r in group], [r["psnr_rgb_db"] for r in group],
+                  marker="o", label=f"{codec} / {conversion} / {mode}")
+    axis.set(xlabel="Mean file bpp", ylabel="Mean PSNR-RGB (dB)", title="Kodak: original RGB reference; measured points")
+    axis.legend(fontsize=8)
+    fig.savefig(output / "mean_rd.png", dpi=180)
+    plt.close(fig)
+    for codec, conversion, image in sorted({key[:3] for key in indexed}):
         fig, axes = plt.subplots(1, 2, figsize=(9, 4), constrained_layout=True)
-        for axis, metric in zip(axes, ("psnr_rgb", "msssim_rgb")):
+        for axis, metric in zip(axes, ("psnr_rgb_db", "msssim_rgb")):
             for mode in ("baseline", "csf"):
-                rows = [row for key, row in sorted(indexed.items()) if key[0] == codec and key[1] == image and key[3] == mode]
+                rows = [row for key, row in sorted(indexed.items()) if key[:3] == (codec, conversion, image) and key[4] == mode]
                 axis.scatter([float(r.get("bpp") or r["file_bpp"]) for r in rows],
-                             [float(r.get(metric, r.get(metric + "_db"))) for r in rows], label=mode)
+                             [float(r[metric]) for r in rows], label=mode)
             axis.set(xlabel="bpp", ylabel=metric)
             axis.legend()
-        fig.suptitle(f"{codec}: {image}; actual encoded points")
-        fig.savefig(output / f"{codec}_{image}.png", dpi=150)
+        fig.suptitle(f"{codec} / {conversion}: {image}; original RGB reference")
+        suffix = "_opencv" if conversion == "opencv_444" else ""
+        fig.savefig(output / f"{codec}_{image}{suffix}.png", dpi=150)
         plt.close(fig)
 
 
@@ -95,9 +131,11 @@ def partition_plots(rows: list[dict], output: Path) -> None:
         if not group:
             continue
         fig, axes = plt.subplots(2, 3, figsize=(11, 6), constrained_layout=True)
+        target = "cu_density_per_mpixel" if dataset == "div2k" else "cu_count"
+        label = "Final luma CU per million coded pixels" if dataset == "div2k" else "Final luma CU count"
         for axis, feature in zip(axes.ravel(), descriptors):
-            axis.scatter([float(r[feature]) for r in group], [float(r["cu_count"]) for r in group], s=15)
-            axis.set(xlabel=feature, ylabel="Final luma CU count")
+            axis.scatter([float(r[feature]) for r in group], [float(r[target]) for r in group], s=15)
+            axis.set(xlabel=feature, ylabel=label)
         fig.suptitle(f"{dataset}: clean images, QP 32, n={len(group)}")
         fig.savefig(output / f"{dataset}_clean_qp32.png", dpi=180)
         plt.close(fig)

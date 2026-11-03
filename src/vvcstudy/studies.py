@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from importlib.metadata import version
 import shutil
 import tomllib
 
@@ -15,6 +16,7 @@ from .datasets import prepare_datasets
 from .descriptors import glcm_features, spatial_complexity_metrics
 from .encoding import execute_encode, execute_jpeg, jpeg_environment, read_rgb
 from .matching import actual_match, frontier
+from .metrics import CURRENT_RGB_PROTOCOL
 from .runner import exclusive_run, run_jobs, session_metadata
 from .stimuli import _to_luma, add_achromatic_awgn, add_sinusoidal_interference, derive_image_seed, luma_rms_difference
 
@@ -23,8 +25,10 @@ def calculation_identity() -> dict:
     """Invalidate cached measurements when their calculation implementation changes."""
     folder = Path(__file__).parent
     return {"numpy": np.__version__, "opencv": cv2.__version__,
+            "quality_protocol": CURRENT_RGB_PROTOCOL, "torch": version("torch"),
+            "pytorch_msssim": version("pytorch-msssim"),
             "modules": {name: sha256(folder / (name + ".py")) for name in
-                        ("stimuli", "descriptors", "metrics", "partitions", "encoding")}}
+                        ("stimuli", "descriptors", "metrics", "color", "partitions", "encoding")}}
 
 
 def config(root: Path, profile: str) -> dict:
@@ -42,11 +46,12 @@ def plan(root: Path, profile: str) -> dict:
     div2k = read_json(root / "manifests/datasets/div2k.json")["images"]
     div_area = sum(row["width"] * row["height"] for row in div2k)
     # Input8 + encoder reconstruction10 + decoded10; trace/PNG/JPEG/builds are extra.
-    yuv_bytes = 1248 * 393216 * 15 + div_area * 8 * 15 + 192 * 393216 * (15 + 7.5)
+    yuv_bytes = 1248 * 393216 * 15 + div_area * 8 * 15 + 192 * 393216 * (15 + 7.5) + 96 * 393216 * 15
     return {"profile": profile, "kodak_images": 24, "div2k_full_images": 100,
             "kodak_partition_encodes": 1248,
-            "div2k_partition_encodes": 800, "matrix_encode_points": 384,
-            "matrix_trace_points_included": 96, "jpeg_inputs": 248,
+            "div2k_partition_encodes": 800, "matrix_encode_points": 576,
+            "matrix_points_shared_with_partitions": 96,
+            "matrix_additional_encodes": 480, "matrix_qp32_points": 144, "jpeg_inputs": 248,
             "jpeg_encodes": 24800, "quality_matches": 1984,
             "timing_vtm_encodes_excluding_warmups": 288,
             "bootstrap_resamples": settings["bootstrap_resamples"],
@@ -55,12 +60,16 @@ def plan(root: Path, profile: str) -> dict:
             "encoding_repeated_by_plan": False}
 
 
-def synthetic_inputs(root: Path) -> list[dict]:
+def synthetic_inputs(root: Path, *, codec_controls: bool = False) -> list[dict]:
     result = []
-    for index, (width, height) in enumerate(((96, 96), (97, 99))):
+    sizes = ((96, 96), (97, 99)) if codec_controls else ((192, 192), (193, 195))
+    for index, (width, height) in enumerate(sizes):
         y, x = np.indices((height, width))
         rgb = np.stack(((3 * x + y) % 256, (x + 2 * y) % 256, (x * y) % 256), axis=-1).astype("uint8")
-        path = root / "data" / "synthetic" / f"smoke{index}.png"
+        directory = root / "data/synthetic"
+        if not codec_controls:
+            directory /= "rgb192"
+        path = directory / f"smoke{index}.png"
         path.parent.mkdir(parents=True, exist_ok=True)
         if not path.exists():
             Image.fromarray(rgb).save(path)
@@ -71,8 +80,9 @@ def synthetic_inputs(root: Path) -> list[dict]:
     return result
 
 
-def prepare_inputs(root: Path, dataset: str, conditions: list[tuple], profile: str) -> list[dict]:
-    originals = (synthetic_inputs(root) if dataset == "synthetic"
+def prepare_inputs(root: Path, dataset: str, conditions: list[tuple], profile: str, *,
+                   codec_controls: bool = False) -> list[dict]:
+    originals = (synthetic_inputs(root, codec_controls=codec_controls) if dataset == "synthetic"
                  else prepare_datasets(root, [dataset])[dataset])
     result = []
     for index, original in enumerate(originals):
@@ -138,7 +148,9 @@ def encode_jobs(root: Path, inputs: list[dict], settings: dict, codecs: dict, *,
         modes = [("vtm23-baseline-trace", "baseline", "ffmpeg_444"),
                  ("vtm23-csf-trace", "csf", "ffmpeg_444"),
                  ("vvenc-baseline-trace", "baseline", "ffmpeg_420"),
-                 ("vvenc-csf-trace", "csf", "ffmpeg_420")]
+                 ("vvenc-csf-trace", "csf", "ffmpeg_420"),
+                 ("vtm23-baseline-trace", "baseline", "opencv_444"),
+                 ("vtm23-csf-trace", "csf", "opencv_444")]
     for item in inputs:
         for qp in settings["qps"]:
             for name, mode, conversion in modes:
@@ -147,7 +159,8 @@ def encode_jobs(root: Path, inputs: list[dict], settings: dict, codecs: dict, *,
                                                    "input_sha256", "width", "height")}
                 spec.update(kind="encode", protocol=1, qp=qp, codec=name, mode=mode,
                             calculation=calculation_identity(),
-                            conversion=conversion, trace=not matrices or qp == 32,
+                            conversion=conversion, trace=not matrices or qp == 32 or (
+                                conversion == "opencv_444" and mode == "baseline"),
                             padding=item["dataset"] in {"div2k", "synthetic"},
                             encoder_sha256=sha256(Path(codec["encoder"])),
                             decoder_sha256=sha256(Path(codec["decoder"])),
@@ -231,6 +244,7 @@ def export_results(run_dir: Path, output: Path | None = None) -> dict:
         measurements.extend({**common, **point} for point in jpeg_points)
         for row in candidates:
             measurements.append({**common, "codec": "VTM", "parameter": row["qp"],
+                                 "quality_protocol": row["quality_protocol"],
                                  "bytes": row["bitstream_bytes"], "bpp": row["file_bpp"],
                                  "file": row.get("stream", ""), "sha256": row["stream_sha256"],
                                  "psnr_rgb_db": row["psnr_rgb_db"], "msssim_rgb": row["msssim_rgb"]})
@@ -245,7 +259,8 @@ def export_results(run_dir: Path, output: Path | None = None) -> dict:
                        "source": spec["source"], "metric": metric, "qp": point["parameter"],
                        "target_quality": point[metric], "vtm_bpp": point["bpp"],
                        "vtm_file": point["file"], "vtm_sha256": point["sha256"],
-                       "stimulus_sha256": spec["input_sha256"], **jpeg["features"], **values}
+                       "stimulus_sha256": spec["input_sha256"], "quality_protocol": CURRENT_RGB_PROTOCOL,
+                       **jpeg["features"], **values}
                 if row["status"] == "ok":
                     for label in ("nearest", "lower", "upper"):
                         row["ratio_" + label] = row[label + "_bpp"] / point["bpp"]
@@ -271,6 +286,8 @@ def run_study(root: Path, profile: str, study: str, codecs: dict, workers: int,
 
 
 def _run_study_locked(root: Path, profile: str, study: str, codecs: dict, workers: int) -> dict:
+    from .metrics import _reference_backend
+    _reference_backend()  # Initialize the one-thread CPU metric before dispatching jobs.
     settings = config(root, profile)
     run_dir = root / "runs" / profile
     session = session_metadata(root)

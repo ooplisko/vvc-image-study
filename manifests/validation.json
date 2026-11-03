@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "metric_protocol": "original_rgb8_opencv_msssim_v1",
+  "sources": {
+    "duan_wrapper": {
+      "url": "https://github.com/duanzhiihao/lossy-vae/blob/005c3c22e0087c4dc1c65916e27831411b9c41cd/scripts/codecs/vvc.py",
+      "commit": "005c3c22e0087c4dc1c65916e27831411b9c41cd"
+    },
+    "duan_evaluation": {
+      "url": "https://github.com/duanzhiihao/lossy-vae/blob/005c3c22e0087c4dc1c65916e27831411b9c41cd/scripts/codecs/vvc-intra-mp.py",
+      "commit": "005c3c22e0087c4dc1c65916e27831411b9c41cd"
+    },
+    "duan_config": {
+      "url": "https://github.com/duanzhiihao/lossy-vae/blob/005c3c22e0087c4dc1c65916e27831411b9c41cd/scripts/codecs/vtm18.0/encoder_intra_vtm.cfg",
+      "commit": "005c3c22e0087c4dc1c65916e27831411b9c41cd"
+    },
+    "compressai_metrics": {
+      "url": "https://github.com/InterDigitalInc/CompressAI/blob/3698ce739e55b81b760ccb16db74b318bf2ddfb7/compressai/utils/bench/codecs.py",
+      "commit": "3698ce739e55b81b760ccb16db74b318bf2ddfb7"
+    }
+  },
+  "lossy_vae": {
+    "codec": {
+      "family": "vtm",
+      "csf": false,
+      "trace": false,
+      "source_url": "https://vcgit.hhi.fraunhofer.de/jvet/VVCSoftware_VTM.git",
+      "source_commit": "3711eda2cff4777b28b3338d6bc4783424fc6d30",
+      "patch": null,
+      "patch_sha256": null,
+      "cxx_flags": "-include cstdint"
+    },
+    "configuration": "configs/codecs/vtm18_duan.cfg",
+    "qps": [
+      22,
+      27,
+      32,
+      37
+    ],
+    "decoder_output_bits": 8,
+    "conversion": "OpenCV COLOR_RGB2YUV / COLOR_YUV2RGB",
+    "quality_reference": "original RGB8",
+    "aggregation": "arithmetic mean of per-image metrics",
+    "configuration_sha256": "141fe9ca25f9dc2cc2ee762f9e771115c7be1e65bf6aba336da302a5b8238b89"
+  },
+  "metric_reference": {
+    "torch": "2.8.0",
+    "pytorch_msssim": "1.0.0",
+    "psnr_absolute_tolerance_db": 1e-05,
+    "msssim_absolute_tolerance": 1e-05,
+    "scope": "implementation agreement on identical RGB8 arrays; not codec reproduction"
+  }
+}

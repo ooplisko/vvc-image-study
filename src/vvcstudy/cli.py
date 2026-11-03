@@ -16,6 +16,8 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[2])
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("doctor")
+    metrics = sub.add_parser("check-metrics", help="Compare metrics on identical RGB arrays with pinned references")
+    metrics.add_argument("--kodak", action="store_true", help="Also check 48 JPEG pairs from all 24 Kodak originals")
     build = sub.add_parser("build-codecs")
     build.add_argument("--parallel", type=int, default=4)
     control = sub.add_parser("check-codecs")
@@ -25,16 +27,23 @@ def _parser() -> argparse.ArgumentParser:
     imported_bundle = sub.add_parser("import-bundle")
     imported_bundle.add_argument("--archive", type=Path, required=True)
     imported_bundle.add_argument("--sha256", required=True)
+    refresh = sub.add_parser("refresh-quality", help="Recalculate matrix RGB metrics from retained frames; no encoding")
+    refresh.add_argument("--profile", choices=("full",), default="full")
+    plot = sub.add_parser("plot", help="Regenerate figures from compact tables without encoding or bootstrap")
+    plot.add_argument("--profile", choices=("full",), default="full")
+    plot.add_argument("--study", choices=("all", "partitions", "matrices", "jpeg-vvc", "anchors", "lossy-vae"), default="all")
     for name in ("plan", "prepare", "reproduce", "run", "analyze", "verify", "status", "stop"):
         part = sub.add_parser(name)
         part.add_argument("--profile", choices=("full", "smoke"), default="full")
+        if name in {"plan", "status", "stop"}:
+            part.add_argument("--study", choices=("lossy-vae",))
         if name in {"prepare", "reproduce", "run"}:
             part.add_argument("--codec-mode", choices=("source", "bundle"), default="source")
             part.add_argument("--workers", type=int, default=4)
         if name in {"run", "reproduce", "analyze"}:
             part.add_argument("--recompute", action="store_true")
         if name == "run":
-            part.add_argument("--study", choices=("partitions", "div2k", "matrices", "jpeg-vvc", "timing"), required=True)
+            part.add_argument("--study", choices=("partitions", "div2k", "matrices", "jpeg-vvc", "timing", "lossy-vae"), required=True)
             part.add_argument("--matched", type=Path)
             part.add_argument("--cpu", type=int, default=0)
         if name == "verify":
@@ -42,7 +51,7 @@ def _parser() -> argparse.ArgumentParser:
             part.add_argument("--artifacts", action="store_true",
                               help="Also verify retained raw files in runs/<profile>/artifacts")
         if name == "analyze":
-            part.add_argument("--study", choices=("jpeg-vvc", "partitions", "matrices", "all"), default="all")
+            part.add_argument("--study", choices=("jpeg-vvc", "partitions", "matrices", "anchors", "lossy-vae", "all"), default="all")
             part.add_argument("--resamples", type=int, default=99_999)
             part.add_argument("--check-only", action="store_true")
     timing = sub.add_parser("timing-plan")
@@ -83,14 +92,18 @@ def verify_run(root: Path, profile: str) -> dict:
                 and verified_result(path.parent, record["spec"]) is None):
             errors.append(path.parent.name)
     timing_jobs = []
-    timing_plan = directory / "timing" / "plan.json"
-    if timing_plan.exists():
-        timing_jobs = read_json(timing_plan)["jobs"]
-        for job in timing_jobs:
-            if verified_result(directory / "timing" / job["job_id"], job["spec"]) is None:
-                missing.append("timing/" + job["job_id"])
+    for timing_plan in sorted(directory.glob("*timing/plan.json")):
+        jobs = read_json(timing_plan)["jobs"]
+        timing_jobs.extend(jobs)
+        for job in jobs:
+            job_id = identity(job["spec"])
+            if job.get("job_id", job_id) != job_id:
+                errors.append("timing plan identity: " + job_id)
+            if verified_result(timing_plan.parent / job_id, job["spec"]) is None:
+                missing.append(timing_plan.parent.name + "/" + job_id)
     return {"accepted": bool(planned or timing_jobs) and not errors and not missing, "checked_jobs": len(files),
-            "planned_jobs": len(planned), "timing_jobs": len(timing_jobs), "errors": errors, "missing": missing,
+            "planned_jobs": len(planned), "timing_jobs": len(timing_jobs),
+            "errors": errors, "missing": missing,
             "scope": "registered study grids and artifact integrity; unrequested studies are not implied"}
 
 
@@ -117,7 +130,8 @@ def analyze(root: Path, profile: str, study: str, *, resamples=99_999, check_onl
     from .results import verify_results
     base = root / "results" / profile
     output = base / "analysis"
-    selected = None if study == "all" else ["partitions", "div2k"] if study == "partitions" else [study]
+    selected = (None if study == "all" else ["partitions", "div2k"] if study == "partitions"
+                else ["matrices"] if study == "anchors" else [study])
     if profile == "full":
         checked = verify_results(root, profile, selected)
         if not checked["accepted"] or check_only:
@@ -156,8 +170,41 @@ def analyze(root: Path, profile: str, study: str, *, resamples=99_999, check_onl
             raise ValueError("No matrix measurements available.")
         if not check_only:
             matrix_plots(paths, output / "matrices")
+    if study in {"all", "anchors"} and not check_only:
+        from .anchors import analyze_anchors
+        result["anchors"] = analyze_anchors(root, profile)
     if profile == "full" and study == "all" and not check_only:
         seal_analysis(root, profile, resamples)
+    return result
+
+
+def plot_results(root: Path, study: str) -> dict:
+    from .artifacts import read_csv
+    from .plots import jpeg_plots, matrix_plots, partition_plots
+    from .anchors import analyze_anchors
+    from .replication import plot_replication
+    from .results import verify_results
+    if study == "lossy-vae":
+        return plot_replication(root)
+    selected = (None if study == "all" else ["partitions", "div2k"] if study == "partitions"
+                else ["matrices"] if study == "anchors" else [study])
+    checked = verify_results(root, studies=selected)
+    if not checked["accepted"]:
+        return checked
+    base = root / "results/full"
+    output = base / "analysis"
+    if study in {"all", "partitions"}:
+        partition_plots(read_csv(base / "tables/encodings.csv"), output / "figures/partitions")
+    if study in {"all", "jpeg-vvc"}:
+        jpeg_plots(read_csv(base / "tables/actual_by_qp.csv"), output / "figures")
+    if study in {"all", "matrices"}:
+        matrix_plots([base / "tables/encodings.csv"], output / "matrices")
+    if study in {"all", "anchors"}:
+        analyze_anchors(root)
+    result = {"status": "complete", "output": str(output), "encoding": False, "bootstrap": False}
+    replication = root / "results/validation/lossy-vae/full/measurements.csv"
+    if study == "all" and replication.exists():
+        result["lossy-vae"] = plot_replication(root)
     return result
 
 
@@ -190,6 +237,24 @@ def execute_study(root: Path, profile: str, study: str, mode: str, workers: int,
     return run_study(root, profile, study, codecs, workers, reset_stop=False)
 
 
+def execute_timing(root: Path, mode: str, *, matched=None, cpu=0, recompute=False, reset_stop=True) -> dict:
+    from .runner import exclusive_run
+    from .timing import run_timing, verify_timing
+    folder = root / "runs/full"
+    with exclusive_run(folder):
+        if reset_stop:
+            (folder / "STOP").unlink(missing_ok=True)
+        if (folder / "STOP").exists():
+            return {"status": "stopped"}
+        if not recompute and (matched is None or matched.resolve() == _matched_file(root).resolve()):
+            checked = verify_timing(root)
+            if checked.get("accepted"):
+                return {"status": "complete", "reused_results": True, **checked}
+    codecs = _prepared(root, "full", "timing", mode)
+    return run_timing(root, matched or _matched_file(root), codecs["vtm23-baseline-trace"],
+                      cpu=cpu, reset_stop=reset_stop)
+
+
 def main(argv: list[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     root = args.root.resolve()
@@ -203,6 +268,29 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "doctor":
             result = {"platform": platform.platform(), "supported": os.name == "nt",
                       "tools": {name: shutil.which(name) for name in ("git", "cmake", "g++", "mingw32-make", "ffmpeg")}}
+        elif args.command == "check-metrics":
+            from .metric_validation import check_metrics
+            result = check_metrics(root, kodak=args.kodak)
+        elif args.command == "plot":
+            result = plot_results(root, args.study)
+        elif getattr(args, "study", None) == "lossy-vae":
+            from .replication import analyze_replication, replication_plan, replication_status, run_replication
+            folder = root / "runs" / args.profile / "lossy-vae"
+            if args.command == "plan":
+                result = replication_plan(root, args.profile)
+            elif args.command == "status":
+                result = replication_status(root, args.profile)
+            elif args.command == "stop":
+                stop(folder)
+                result = {"requested": "stop replication after active jobs finish"}
+            elif args.command == "analyze":
+                if args.check_only:
+                    raise ValueError("Use status --study lossy-vae to inspect replication progress.")
+                result = analyze_replication(root, args.profile)
+            else:
+                if args.codec_mode != "source":
+                    raise ValueError("VTM 18.0 replication uses its pinned source build.")
+                result = run_replication(root, args.profile, args.workers)
         elif args.command == "build-codecs":
             from .codec_validation import CODECS
             result = prepare_codecs(root, names=list(CODECS), parallel=args.parallel)
@@ -245,6 +333,13 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "analyze":
             result = analyze(root, args.profile, args.study, resamples=args.resamples,
                              check_only=args.check_only, recompute=args.recompute)
+        elif args.command == "refresh-quality":
+            from .color import refresh_matrix_quality
+            from .results import seal_results
+            from .runner import exclusive_run
+            with exclusive_run(root / "runs" / args.profile):
+                result = refresh_matrix_quality(root, args.profile)
+                result["verification"] = seal_results(root, args.profile, ["matrices"])
         else:
             study = getattr(args, "study", None)
             if study == "timing" and (args.profile != "full" or args.workers != 1):
@@ -257,10 +352,8 @@ def main(argv: list[str] | None = None) -> int:
                             else prepare_datasets(root, ["kodak", "div2k"]))
                 result = {"codecs": list(codecs), "datasets": {key: len(value) for key, value in datasets.items()}}
             elif args.command == "run" and study == "timing":
-                from .timing import run_timing
-                codecs = _prepared(root, args.profile, study, args.codec_mode)
-                result = run_timing(root, args.matched or _matched_file(root),
-                                    codecs["vtm23-baseline-trace"], cpu=args.cpu)
+                result = execute_timing(root, args.codec_mode, matched=args.matched, cpu=args.cpu,
+                                        recompute=args.recompute)
             elif args.command == "run":
                 result = execute_study(root, args.profile, study, args.codec_mode, args.workers,
                                        recompute=args.recompute)
@@ -274,10 +367,8 @@ def main(argv: list[str] | None = None) -> int:
                         break
                 else:
                     if args.profile == "full":
-                        from .timing import run_timing
-                        codecs = _prepared(root, args.profile, "timing", args.codec_mode)
-                        result["timing"] = run_timing(root, _matched_file(root),
-                                                      codecs["vtm23-baseline-trace"], reset_stop=False)
+                        result["timing"] = execute_timing(root, args.codec_mode,
+                                                           recompute=args.recompute, reset_stop=False)
                         if result["timing"]["status"] == "complete":
                             result["analysis"] = analyze(root, "full", "all", recompute=args.recompute)
                         from .results import verify_results

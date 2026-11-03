@@ -5,7 +5,20 @@
 /data/
 /runs/
 /results/smoke/
-/results/full/analysis/**/bootstrap_cache_*.npz
+/results/**/*.npz
+/results/**/bootstrap_cache/
+/results/quality-reference/
+/results/validation/**/smoke/
+/results/validation/metrics/synthetic/
+# Keep only figures embedded in the maintained validation pages.
+/results/**/*.png
+!/results/full/analysis/anchors/rd_psnr_duan_anchor.png
+!/results/full/analysis/anchors/rd_psnr_color_conversion.png
+!/results/full/analysis/anchors/rd_psnr_compressai_anchor.png
+!/results/full/analysis/anchors/rd_msssim_compressai_anchor.png
+!/results/full/analysis/anchors/kodak_psnr.png
+!/results/validation/lossy-vae/full/psnr_rgb_db_by_qp.png
+!/results/validation/lossy-vae/full/bpp_by_qp.png
 /dist/
 __pycache__/
 *.py[cod]

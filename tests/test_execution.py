@@ -133,6 +133,22 @@ def test_verification_does_not_infer_complete_grid_without_plan(tmp_path):
     assert not verify_run(tmp_path, "smoke")["accepted"]
 
 
+def test_verification_detects_damaged_supplemental_timing(tmp_path):
+    folder = tmp_path / "runs/full/extra-timing"
+    job = jobs(1)[0]
+    target = folder / identity(job["spec"])
+    target.mkdir(parents=True)
+    result = write_result(job, target)
+    write_json(target / "result.json", {"job_id": identity(job["spec"]), "spec": job["spec"],
+                                       "status": "complete", **result})
+    write_json(folder / "plan.json", {"jobs": [job]})
+    assert verify_run(tmp_path, "full")["missing"] == []
+    (target / "value.txt").write_text("corrupt")
+    checked = verify_run(tmp_path, "full")
+    assert not checked["accepted"]
+    assert checked["missing"] == ["extra-timing/" + identity(job["spec"])]
+
+
 @pytest.mark.parametrize("result,code", [
     ({"partitions": {"status": "failed"}}, 1),
     ({"timing": {"status": "stopped"}}, 2),

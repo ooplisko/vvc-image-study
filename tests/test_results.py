@@ -17,7 +17,7 @@ def test_complete_results_validate_and_reuse_without_encoders(monkeypatch):
     assert checked["accepted"], checked["errors"]
     assert checked["checks"]["partitions"]["rows"] == 1248
     assert checked["checks"]["div2k"]["rows"] == 800
-    assert checked["checks"]["matrices"]["encodes"] == 384
+    assert checked["checks"]["matrices"]["encodes"] == 576
     assert checked["checks"]["jpeg-vvc"]["matched_rows"] == 1984
 
     def forbidden(*args, **kwargs):
@@ -43,6 +43,18 @@ def test_table_tampering_or_missing_points_prevent_reuse(tmp_path):
         seal_results(tmp_path, studies=["div2k"])
 
 
+def test_yuv_derived_matrix_reference_cannot_pass_as_original_rgb(tmp_path):
+    base = tmp_path / "results/full/tables"
+    base.mkdir(parents=True)
+    (tmp_path / "configs").mkdir()
+    shutil.copyfile(ROOT / "configs/full.toml", tmp_path / "configs/full.toml")
+    rows = read_csv(ROOT / "results/full/tables/encodings.csv")
+    next(row for row in rows if row["conversion"] == "ffmpeg_444")["rgb_protocol"] = ""
+    write_csv(base / "encodings.csv", rows)
+    with pytest.raises(ValueError, match="original RGB8"):
+        seal_results(tmp_path, studies=["matrices"])
+
+
 def test_merge_keeps_unrelated_result_points(tmp_path):
     path = tmp_path / "table.csv"
     write_csv(path, [{"id": "a", "value": 1}, {"id": "b", "value": 2}])
@@ -66,6 +78,45 @@ def test_analysis_reuses_checked_outputs_without_resampling(monkeypatch):
 
     monkeypatch.setattr(jpeg_analysis, "analyze_jpeg", forbidden)
     assert cli.analyze(ROOT, "full", "all")["reused"]
+
+
+def test_compact_analysis_is_reusable_without_any_generated_figures(tmp_path):
+    from vvcstudy.analysis_cache import completed_analysis
+    shutil.copytree(ROOT / "results/full", tmp_path / "results/full",
+                    ignore=shutil.ignore_patterns("*.png", "*.npz", "bootstrap_cache"))
+    shutil.copytree(ROOT / "manifests", tmp_path / "manifests")
+    assert not list(tmp_path.rglob("*.png"))
+    assert completed_analysis(tmp_path, "full", 99_999)
+
+
+def test_completed_full_workflow_does_not_encode_or_repeat_timing(monkeypatch):
+    from vvcstudy import cli, timing, jpeg_analysis
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("Verified results must be reused without encoding, timing or resampling")
+
+    monkeypatch.setattr(cli, "_prepared", forbidden)
+    monkeypatch.setattr(timing, "run_timing", forbidden)
+    monkeypatch.setattr(jpeg_analysis, "analyze_jpeg", forbidden)
+    assert cli.main(["--root", str(ROOT), "reproduce", "--profile", "full"]) == 0
+
+
+def test_reused_timing_obeys_stop_boundary(tmp_path, monkeypatch):
+    from vvcstudy import cli, timing
+    from vvcstudy.runner import stop
+    monkeypatch.setattr(timing, "verify_timing", lambda *args: {"accepted": True})
+    stop(tmp_path / "runs/full")
+    assert cli.execute_timing(tmp_path, "source", reset_stop=False)["status"] == "stopped"
+
+
+def test_mixed_quality_protocol_cannot_be_sealed(tmp_path):
+    (tmp_path / "configs").mkdir()
+    shutil.copyfile(ROOT / "configs/full.toml", tmp_path / "configs/full.toml")
+    rows = read_csv(ROOT / "results/full/tables/encodings.csv")
+    next(row for row in rows if row["dataset"] == "div2k")["quality_protocol"] = "opencv_rgb_v1"
+    write_csv(tmp_path / "results/full/tables/encodings.csv", rows)
+    with pytest.raises(ValueError, match="metric protocol"):
+        seal_results(tmp_path, studies=["div2k"])
 
 
 def test_full_workflow_with_completed_tables_reaches_only_timing(tmp_path, monkeypatch):
